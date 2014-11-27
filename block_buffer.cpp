@@ -5,7 +5,7 @@
 
 namespace {
 
-const size_t buff_base_size = 5;
+const size_t buff_base_size = 1024;
 
 size_t calc_size(size_t size)
 {
