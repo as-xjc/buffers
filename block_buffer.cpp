@@ -9,10 +9,10 @@ const size_t buff_base_size = 1024;
 
 size_t calc_size(size_t size)
 {
-	size_t allocate_size = size/buff_base_size;
-	if (size%buff_base_size> 0) allocate_size++;
+	size_t allocate_size = size / buff_base_size;
+	if (size % buff_base_size > 0) allocate_size++;
 
-	if (allocate_size < 1) allocate_size= 1;
+	if (allocate_size < 1) allocate_size = 1;
 
 	allocate_size *= buff_base_size;
 
@@ -116,11 +116,12 @@ void block::debug(size_t format_offset)
 	std::printf("capacity:%d, used:%d, free:%d\n", capacity(), size(), free());
 	if (size() < 1) return;
 
+	std::printf("    ");
 	int index = 0;
 	for (int i = _head; i < _pos; i++) {
-		std::printf("%c", _data[i]);
+		std::printf("%3x", _data[i]);
 		index++;
-		if (index % format_offset == 0 && i != (_pos-1)) std::printf("\n");
+		if (index % format_offset == 0 && i != (_pos-1)) std::printf("\n    ");
 	}
 }
 
@@ -194,20 +195,20 @@ size_t block_buffer::skip(size_t length)
 
 void block_buffer::debug(size_t format_offset)
 {
-	std::printf("********** Debug information **********\n");
+	std::printf("******************** Debug information ********************\n");
 	std::printf("in use:");
 	int index = 0;
 	for (auto _block: _blocks) {
 		std::printf("\nblock[%d] ", index++);
 		_block->debug(format_offset);
 	}
-	std::printf("\n---------------------------------------\n");
+	std::printf("\n-----------------------------------------------------------\n");
 	std::printf("in free:");
 	index = 0;
 	for (auto _block: _free_blocks) {
 		std::printf("\nblock[%d] capacity:%d", index++, _block->capacity());
 	}
-	std::printf("\n***************************************\n");
+	std::printf("\n***********************************************************\n");
 }
 
 void block_buffer::free_block(block* _block)
