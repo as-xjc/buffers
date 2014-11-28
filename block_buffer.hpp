@@ -11,13 +11,13 @@ public:
 	block(size_t capacity);
 	~block();
 
-	size_t capacity();
-	size_t free();
-	size_t size();
+	size_t capacity() const;
+	size_t free() const;
+	size_t size() const;
 	char* malloc();
 	void reset();
 	size_t skip(size_t length);
-	size_t append(block& other);
+	size_t append(const block& other);
 
 	size_t write(char* src, size_t length, bool skip = true);
 	size_t read(char* des, size_t length, bool skip = true);

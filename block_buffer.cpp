@@ -36,17 +36,17 @@ block::~block()
 	delete[] _data;
 }
 
-size_t block::capacity()
+size_t block::capacity() const
 {
 	return _capacity;
 }
 
-size_t block::free()
+size_t block::free() const
 {
 	return _capacity - _pos;
 }
 
-size_t block::size()
+size_t block::size() const
 {
 	return _pos - _head;
 }
@@ -72,15 +72,15 @@ size_t block::skip(size_t length)
 	return skip_length;
 }
 
-size_t block::append(block& other)
+size_t block::append(const block& other)
 {
 	size_t length = other.size();
 	if (length < 1) return 0;
 
 	if (free() < length) length = free();
 
-	size_t ret = other.read(this->malloc(), length, false);
-	return this->skip(ret);
+	std::strncpy(this->malloc(), &other._data[other._head], length);
+	return this->skip(length);
 }
 
 size_t block::write(char* src, size_t length, bool skip)
