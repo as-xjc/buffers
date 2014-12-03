@@ -52,7 +52,7 @@ public:
 	size_t write(void* src, size_t length, bool skip = true);
 	size_t read(void* des, size_t length, bool skip = true);
 
-	block* allocate(size_t capacity);
+	block* allocate(size_t capacity = 1);
 	void free(block* _block);
 	void push(block* _block);
 
