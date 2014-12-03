@@ -7,6 +7,7 @@
 namespace buffer {
 
 enum class skip_type {write, read};
+enum class debug_type {hex, chars};
 
 class block {
 public:
@@ -25,7 +26,7 @@ public:
 	size_t write(void* src, size_t length, bool skip = true);
 	size_t read(void* des, size_t length, bool skip = true);
 
-	void debug(size_t format_offset = 16);
+	void debug(debug_type type = debug_type::hex);
 
 private:
 	uint8_t* _data = nullptr;
@@ -40,21 +41,22 @@ public:
 	block_buffer();
 	~block_buffer();
 
-	size_t size();
+	block* pop();
 	void clear();
+	size_t size();
 	block* merge();
 	void* malloc(size_t size);
+	size_t merge(block_buffer& buffer);
+	size_t append(block_buffer& buffer);
 	size_t skip(skip_type type, size_t length);
-
 	size_t write(void* src, size_t length, bool skip = true);
 	size_t read(void* des, size_t length, bool skip = true);
 
-	void debug(size_t format_offset = 16);
-
-	block* allocate_block(size_t capacity);
-	void free_block(block* _block);
-	block* pop();
+	block* allocate(size_t capacity);
+	void free(block* _block);
 	void push(block* _block);
+
+	void debug(debug_type type = debug_type::hex);
 
 private:
 	block* get_block(size_t size);

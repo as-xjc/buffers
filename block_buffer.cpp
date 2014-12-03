@@ -122,15 +122,26 @@ size_t block::read(void* des, size_t length, bool skip)
 	return write_size;
 }
 
-void block::debug(size_t format_offset)
+void block::debug(debug_type type)
 {
+	int format_offset = 16;
 	std::printf("capacity:%d, used:%d, free:%d\n", capacity(), size(), free());
 	if (size() < 1) return;
 
 	std::printf("    ");
 	int index = 0;
 	for (int i = _head; i < _pos; i++) {
-		std::printf("%3x", _data[i]);
+		switch (type) {
+			case debug_type::hex :
+				std::printf("%3x", _data[i]);
+				break;
+			case debug_type::chars :
+				std::printf("%c", _data[i]);
+				break;
+			default:
+				std::printf("%d", _data[i]);
+		}
+
 		index++;
 		if (index % format_offset == 0 && i != (_pos-1)) std::printf("\n    ");
 	}
@@ -163,7 +174,7 @@ size_t block_buffer::size()
 
 void block_buffer::clear()
 {
-	for (auto _block : _blocks) free_block(_block);
+	for (auto _block : _blocks) free(_block);
 	_blocks.clear();
 }
 
@@ -176,13 +187,13 @@ block* block_buffer::merge()
 
 	if (total < 1) return nullptr;
 
-	auto total_block = allocate_block(total);
+	auto total_block = allocate(total);
 	for (auto _block: _blocks) {
 		if (_block->size() > 0) {
 			total_block->append(*_block);
 		}
 
-		free_block(_block);
+		free(_block);
 	}
 	_blocks.clear();
 
@@ -223,14 +234,14 @@ size_t block_buffer::skip(skip_type type, size_t length)
 	return 0;
 }
 
-void block_buffer::debug(size_t format_offset)
+void block_buffer::debug(debug_type type)
 {
 	std::printf("******************** Debug information ********************\n");
 	std::printf("in use:");
 	int index = 0;
 	for (auto _block: _blocks) {
 		std::printf("\nblock[%d] ", index++);
-		_block->debug(format_offset);
+		_block->debug(type);
 	}
 	std::printf("\n-----------------------------------------------------------\n");
 	std::printf("in free:");
@@ -241,7 +252,7 @@ void block_buffer::debug(size_t format_offset)
 	std::printf("\n***********************************************************\n");
 }
 
-void block_buffer::free_block(block* _block)
+void block_buffer::free(block* _block)
 {
 	_block->reset();
 
@@ -260,7 +271,7 @@ void block_buffer::free_block(block* _block)
 	_free_blocks.push_back(_block);
 }
 
-block* block_buffer::allocate_block(size_t capacity)
+block* block_buffer::allocate(size_t capacity)
 {
 	if (_free_blocks.empty()) {
 		return new block(capacity);
@@ -283,14 +294,14 @@ block* block_buffer::allocate_block(size_t capacity)
 block* block_buffer::get_block(size_t size)
 {
 	if (_blocks.empty()) {
-		auto tmp = allocate_block(size);
+		auto tmp = allocate(size);
 		_blocks.push_back(tmp);
 		return tmp;
 	}
 
 	auto back = _blocks.back();
 	if (size > back->free()) {
-		back = allocate_block(size);
+		back = allocate(size);
 		_blocks.push_back(back);
 	}
 
@@ -336,6 +347,34 @@ size_t block_buffer::read(void* des, size_t length, bool skip)
 	return read_pos;
 }
 
+size_t block_buffer::merge(block_buffer& buffer)
+{
+	size_t total = 0;
+
+	for (;;) {
+		auto _block = buffer.pop();
+		if (_block == nullptr) break;
+
+		total += _block->size();
+		this->push(_block);
+	}
+
+	return total;
+}
+
+size_t block_buffer::append(block_buffer& buffer)
+{
+	size_t total = 0;
+	for (auto _block : buffer._blocks) {
+		if (_block->size() < 1) continue;
+
+		total += _block->size();
+		this->write(_block->data(), _block->size());
+	}
+
+	return total;
+}
+
 block* block_buffer::pop()
 {
 	if (_blocks.empty()) return nullptr;
@@ -349,13 +388,13 @@ block* block_buffer::pop()
 void block_buffer::push(block* _block)
 {
 	if (_block->size()) _blocks.push_back(_block);
-	else free_block(_block);
+	else free(_block);
 }
 
 void block_buffer::remove_free_block(block* _block)
 {
 	_blocks.remove(_block);
-	free_block(_block);
+	free(_block);
 }
 
 }
