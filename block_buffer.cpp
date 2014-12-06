@@ -3,32 +3,12 @@
 #include <set>
 #include "block_buffer.hpp"
 
-namespace {
-
-const size_t buff_base_size = 1024;
-
-size_t calc_size(size_t size)
-{
-	size_t allocate_size = size / buff_base_size;
-	if (size % buff_base_size > 0) allocate_size++;
-
-	if (allocate_size < 1) allocate_size = 1;
-
-	allocate_size *= buff_base_size;
-
-	return allocate_size;
-}
-
-}
-
 namespace buffer {
 
 block::block(size_t capacity)
 {
-	size_t allocate_size = calc_size(capacity);
-
-	_data = new uint8_t[allocate_size];
-	_capacity = allocate_size;
+	_data = new uint8_t[capacity];
+	_capacity = capacity;
 }
 
 block::~block()
@@ -147,7 +127,8 @@ void block::debug(debug_type type)
 	}
 }
 
-block_buffer::block_buffer()
+block_buffer::block_buffer(size_t min_block_size):
+_min_block_size(min_block_size)
 {
 }
 
@@ -274,7 +255,7 @@ void block_buffer::free(block* _block)
 block* block_buffer::allocate(size_t capacity)
 {
 	if (_free_blocks.empty()) {
-		return new block(capacity);
+		return new block(calc_block_size(capacity));
 	}
 
 	block* found = nullptr;
@@ -286,7 +267,7 @@ block* block_buffer::allocate(size_t capacity)
 		}
 	}
 
-	if (found == nullptr) found = new block(capacity);
+	if (found == nullptr) found = new block(calc_block_size(capacity));
 
 	return found;
 }
@@ -395,6 +376,18 @@ void block_buffer::remove_free_block(block* _block)
 {
 	_blocks.remove(_block);
 	free(_block);
+}
+
+size_t block_buffer::calc_block_size(size_t size)
+{
+	size_t allocate_size = size / _min_block_size;
+	if (size % _min_block_size > 0) allocate_size++;
+
+	if (allocate_size < 1) allocate_size = 1;
+
+	allocate_size *= _min_block_size;
+
+	return allocate_size;
 }
 
 }
