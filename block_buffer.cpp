@@ -286,17 +286,10 @@ block* block_buffer::allocate(size_t capacity)
 
 block* block_buffer::get_block(size_t size)
 {
-	if (_blocks.empty()) {
-		auto tmp = allocate(size);
-		_blocks.push_back(tmp);
-		return tmp;
-	}
+	if (_blocks.empty()) return new_push_block(size);
 
 	auto back = _blocks.back();
-	if (size > back->free()) {
-		back = allocate(size);
-		_blocks.push_back(back);
-	}
+	if (size > back->free()) back = new_push_block(size);
 
 	return back;
 }
@@ -392,7 +385,7 @@ void block_buffer::remove_free_block(block* _block)
 
 block* block_buffer::new_push_block(size_t size)
 {
-	auto _block = new block(calc_block_size(size));
+	auto _block = allocate(size);
 	_blocks.push_back(_block);
 	return _block;
 }
