@@ -188,6 +188,18 @@ void* block_buffer::malloc(size_t size)
 	return tmp->malloc();	 
 }
 
+std::tuple<void*, size_t> block_buffer::malloc()
+{
+	block* tmp = nullptr;
+	if (_blocks.empty()) tmp = new_push_block(_min_block_size);
+	else {
+		tmp = _blocks.back();
+		if (tmp->free() < 1) tmp = new_push_block(_min_block_size);
+	}
+
+	return std::make_tuple(tmp->malloc(), tmp->free());
+}
+
 size_t block_buffer::skip(skip_type type, size_t length)
 {
 	if (_blocks.empty()) return 0;
@@ -376,6 +388,13 @@ void block_buffer::remove_free_block(block* _block)
 {
 	_blocks.remove(_block);
 	free(_block);
+}
+
+block* block_buffer::new_push_block(size_t size)
+{
+	auto _block = new block(calc_block_size(size));
+	_blocks.push_back(_block);
+	return _block;
 }
 
 size_t block_buffer::calc_block_size(size_t size)

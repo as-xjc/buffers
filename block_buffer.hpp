@@ -22,6 +22,7 @@
 
 #include <cstdint>
 #include <list>
+#include <tuple>
 
 namespace buffer {
 
@@ -65,6 +66,7 @@ public:
 	size_t size();
 	block* merge();
 	void* malloc(size_t size);
+	std::tuple<void*, size_t> malloc();
 	size_t merge(block_buffer& buffer);
 	size_t append(block_buffer& buffer);
 	size_t skip(skip_type type, size_t length);
@@ -80,6 +82,7 @@ public:
 private:
 	block* get_block(size_t size);
 	void remove_free_block(block* _block);
+	block* new_push_block(size_t size);
 
 	size_t calc_block_size(size_t size);
 

@@ -125,6 +125,20 @@ void test_merge_file()
 	std::fclose(wfile);
 }
 
+void test_malloc()
+{
+	buffer::block_buffer buff;
+	buff.debug();
+	void* b;
+	size_t len;
+	std::tie(b, len) = buff.malloc();
+	buff.debug();
+	std::cout << "malloc len:" << len << std::endl;
+	std::tie(b, len) = buff.malloc();
+	buff.debug();
+	std::cout << "malloc len:" << len << std::endl;
+}
+
 int main(int argc, char* argv[])
 {
 	progress = argv[0];
@@ -137,6 +151,8 @@ int main(int argc, char* argv[])
 	test_merge_file();
 	std::cout << " * test block merge/append" << std::endl;
 	test_move_append();
+	std::cout << " * test malloc" << std::endl;
+	test_malloc();
 
 	return 0;
 }
