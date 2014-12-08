@@ -1,12 +1,14 @@
 #include <cstdio>
 #include <cstring>
 #include <set>
+#include <cassert>
 #include "block_buffer.hpp"
 
 namespace buffer {
 
 block::block(size_t capacity)
 {
+	assert(capacity > 0);
 	_data = new uint8_t[capacity];
 	_capacity = capacity;
 }
@@ -76,6 +78,8 @@ size_t block::append(const block& other)
 
 size_t block::write(void* src, size_t length, bool skip)
 {
+	if (length < 1) return 0;
+
 	auto free_size = free();
 	auto write_size = length;
 
@@ -90,6 +94,8 @@ size_t block::write(void* src, size_t length, bool skip)
 
 size_t block::read(void* des, size_t length, bool skip)
 {
+	if (length < 1) return 0;
+
 	auto used_size = size();
 	auto write_size = length;
 
@@ -106,7 +112,10 @@ void block::debug(debug_type type)
 {
 	int format_offset = 16;
 	std::printf("capacity:%d, used:%d, free:%d\n", capacity(), size(), free());
-	if (size() < 1) return;
+	if (size() < 1) {
+		std::printf("    <none>");
+		return;
+	}
 
 	std::printf("    ");
 	int index = 0;
@@ -130,6 +139,7 @@ void block::debug(debug_type type)
 block_buffer::block_buffer(size_t min_block_size):
 _min_block_size(min_block_size)
 {
+	assert(min_block_size > 0);
 }
 
 block_buffer::~block_buffer()
@@ -296,13 +306,15 @@ block* block_buffer::get_block(size_t size)
 
 size_t block_buffer::write(void* src, size_t length, bool skip)
 {
+	if (length < 1) return 0;
+
 	auto tmp = get_block(length);
 	return tmp->write(src, length, skip);
 }
 
 size_t block_buffer::read(void* des, size_t length, bool skip)
 {
-	if (_blocks.empty()) return 0;
+	if (length < 1 || _blocks.empty()) return 0;
 
 	size_t read_pos = 0;
 	size_t need_read = length;

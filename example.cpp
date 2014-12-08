@@ -9,8 +9,8 @@ static char* progress = nullptr;
 
 void test_move_append()
 {
-	buffer::block_buffer buff_1;
-	buffer::block_buffer buff_2;
+	buffer::block_buffer buff_1(2);
+	buffer::block_buffer buff_2(100);
 
 	char _1[] = "this is buff 1";
 	char _2[] = "this is buff 2";
