@@ -74,6 +74,7 @@ public:
 	size_t append(block_buffer& buffer);
 	size_t skip(skip_type type, size_t length);
 	size_t write(void* src, size_t length, bool skip = true);
+	size_t write(block_buffer& buffer);
 	size_t read(void* des, size_t length, bool skip = true);
 
 	block* allocate(size_t capacity = 1);

@@ -312,6 +312,21 @@ size_t block_buffer::write(void* src, size_t length, bool skip)
 	return tmp->write(src, length, skip);
 }
 
+size_t block_buffer::write(block_buffer& buffer)
+{
+	size_t total = 0;
+	for (;;) {
+		auto block = buffer.pop();
+		if (block == nullptr) break;
+
+		total += this->write(block->data(), block->size());
+
+		buffer.free(block);
+	}
+
+	return total;
+}
+
 size_t block_buffer::read(void* des, size_t length, bool skip)
 {
 	if (length < 1 || _blocks.empty()) return 0;
