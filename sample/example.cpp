@@ -2,8 +2,10 @@
 #include <cstring>
 #include <iostream>
 #include <string>
+#include <zlib.h>
 
 #include "block_buffer.hpp"
+#include "util.hpp"
 
 static char* progress = nullptr;
 
@@ -151,8 +153,19 @@ void test_crc32()
 	buff_2.write(_1, sizeof(_1)-1);
 	buff_2.write(_1, sizeof(_1)-1);
 	buff_2.debug();
-	std::cout << "buff 1 crc32 :" << buff_1.crc32() << std::endl;
-	std::cout << "buff 2 crc32 :" << buff_2.crc32() << std::endl;
+
+	std::cout << "buff 1 crc32 :" << buffer::util::crc32(0, buff_1) << std::endl;
+	std::cout << "buff 1 adler32:" << buffer::util::adler32(0, buff_1) << std::endl;
+	std::cout << "buff 2 crc32 :" << buffer::util::crc32(0, buff_1) << std::endl;
+	std::cout << "buff 2 adler32:" << buffer::util::adler32(0, buff_1) << std::endl;
+
+	ulong crc = crc32(0, (const Bytef*)_1, (sizeof(_1)-1));
+	crc = crc32(crc, (const Bytef*)_1, (sizeof(_1)-1));
+
+	ulong adler = adler32(0, (const Bytef*)_1, (sizeof(_1)-1));
+	adler = adler32(adler, (const Bytef*)_1, (sizeof(_1)-1));
+	std::cout << "zlib crc32 :" << crc << std::endl;
+	std::cout << "zlib adler32:" << adler << std::endl;
 }
 
 int main(int argc, char* argv[])
