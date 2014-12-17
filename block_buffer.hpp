@@ -49,6 +49,8 @@ public:
 	size_t write(void* src, size_t length, bool skip = true);
 	size_t read(void* des, size_t length, bool skip = true);
 
+	uint32_t crc32(uint32_t crc32 = 0);
+
 	void debug(debug_type type = debug_type::hex);
 
 private:
@@ -80,6 +82,8 @@ public:
 	block* allocate(size_t capacity = 1);
 	void free(block* _block);
 	void push(block* _block);
+
+	uint32_t crc32(uint32_t crc32 = 0);
 
 	void debug(debug_type type = debug_type::hex);
 

@@ -3,6 +3,7 @@
 #include <set>
 #include <cassert>
 #include "block_buffer.hpp"
+#include "crc32.h"
 
 namespace buffer {
 
@@ -106,6 +107,11 @@ size_t block::read(void* des, size_t length, bool skip)
 	if (skip) _head += write_size;
 
 	return write_size;
+}
+
+uint32_t block::crc32(uint32_t crc32)
+{
+	return ::crc32(crc32, this->data(), this->size());
 }
 
 void block::debug(debug_type type)
@@ -386,6 +392,15 @@ size_t block_buffer::append(block_buffer& buffer)
 	}
 
 	return total;
+}
+
+uint32_t block_buffer::crc32(uint32_t crc32)
+{
+	for (auto _block : _blocks) {
+		crc32 = _block->crc32(crc32);
+	}
+
+	return crc32;
 }
 
 block* block_buffer::pop()

@@ -139,6 +139,22 @@ void test_malloc()
 	std::cout << "malloc len:" << len << std::endl;
 }
 
+void test_crc32()
+{
+	char _1[] = "this is buff 1, it used to test crc32";
+
+	buffer::block_buffer buff_1;
+	buffer::block_buffer buff_2(2);
+	buff_1.write(_1, sizeof(_1)-1);
+	buff_1.write(_1, sizeof(_1)-1);
+	buff_1.debug();
+	buff_2.write(_1, sizeof(_1)-1);
+	buff_2.write(_1, sizeof(_1)-1);
+	buff_2.debug();
+	std::cout << "buff 1 crc32 :" << buff_1.crc32() << std::endl;
+	std::cout << "buff 2 crc32 :" << buff_2.crc32() << std::endl;
+}
+
 int main(int argc, char* argv[])
 {
 	progress = argv[0];
@@ -153,6 +169,8 @@ int main(int argc, char* argv[])
 	test_move_append();
 	std::cout << " * test malloc" << std::endl;
 	test_malloc();
+	std::cout << " * test crc32" << std::endl;
+	test_crc32();
 
 	return 0;
 }
