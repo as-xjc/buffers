@@ -1,6 +1,5 @@
 #include <cstdio>
 #include <cstring>
-#include <set>
 #include <cassert>
 #include "block_buffer.hpp"
 
@@ -218,17 +217,16 @@ size_t block_buffer::skip(skip_type type, size_t length)
 		auto tmp = _blocks.back();
 		return tmp->skip(skip_type::write, length);
 	} else {
-		std::set<block*> dels;
 		size_t skip_length = 0;
-		for (auto _block : _blocks) {
+		for (auto it = _blocks.begin(); it != _blocks.end();) {
 			if (skip_length >= length) break;
-			skip_length += _block->skip(skip_type::read, length);
 
-			if (_block->size() < 1) dels.insert(_block);
-		}
+			skip_length += (*it)->skip(skip_type::read, length);
 
-		for (auto _block : dels) {
-			remove_free_block(_block);
+			if ((*it)->size() < 1) {
+				free(*it);
+				it = _blocks.erase(it);
+			} else ++it;
 		}
 
 		return skip_length;
@@ -333,28 +331,27 @@ size_t block_buffer::read(void* des, size_t length, bool skip)
 
 	size_t read_pos = 0;
 	size_t need_read = length;
-	std::set<block*> delBlock;
 
-	for (auto _block : _blocks) {
+	for (auto it = _blocks.begin(); it != _blocks.end();) {
 		if (need_read < 1) break;
 
-		if (_block->size() < 1) {
-			delBlock.insert(_block);
+		if ((*it)->size() < 1) {
+			free(*it);
+			it = _blocks.erase(it);
 			continue;
 		}
 
 		size_t cur_read = need_read;
-		if (_block->size() < need_read) cur_read = _block->size();
+		if ((*it)->size() < need_read) cur_read = (*it)->size();
 
-		size_t ret = _block->read(&((uint8_t*)des)[read_pos], cur_read, skip);
+		size_t ret = (*it)->read(&((uint8_t*)des)[read_pos], cur_read, skip);
 		read_pos += ret;
 		need_read -= ret;
 
-		if (_block->size() < 1) delBlock.insert(_block);
-	}
-
-	for (auto it : delBlock) {
-		remove_free_block(it);
+		if ((*it)->size() < 1) {
+			free(*it);
+			it = _blocks.erase(it);
+		} else ++it;
 	}
 
 	return read_pos;
@@ -407,12 +404,6 @@ void block_buffer::push(block* _block)
 std::list<block*>& block_buffer::blocks()
 {
 	return _blocks;
-}
-
-void block_buffer::remove_free_block(block* _block)
-{
-	_blocks.remove(_block);
-	free(_block);
 }
 
 block* block_buffer::new_push_block(size_t size)

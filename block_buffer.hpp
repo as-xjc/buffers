@@ -87,7 +87,6 @@ public:
 
 private:
 	block* get_block(size_t size);
-	void remove_free_block(block* _block);
 	block* new_push_block(size_t size);
 
 	size_t calc_block_size(size_t size);
