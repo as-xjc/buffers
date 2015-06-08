@@ -110,7 +110,7 @@ size_t block::read(void* des, size_t length, bool skip)
 void block::debug(debug_type type)
 {
 	int format_offset = 16;
-	std::printf("capacity:%d, used:%d, free:%d\n", capacity(), size(), free());
+	std::printf("capacity:%zu, used:%zu, free:%zu\n", capacity(), size(), free());
 	if (size() < 1) {
 		std::printf("    <none>");
 		return;
@@ -248,7 +248,7 @@ void block_buffer::debug(debug_type type)
 	std::printf("in free:");
 	index = 0;
 	for (auto _block: _free_blocks) {
-		std::printf("\nblock[%d] capacity:%d", index++, _block->capacity());
+		std::printf("\nblock[%d] capacity:%zu", index++, _block->capacity());
 	}
 	std::printf("\n***********************************************************\n");
 }
