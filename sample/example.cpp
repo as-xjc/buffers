@@ -2,10 +2,8 @@
 #include <cstring>
 #include <iostream>
 #include <string>
-#include <zlib.h>
 
-#include "block_buffer.hpp"
-#include "util.hpp"
+#include "../block_buffer.hpp"
 
 static char* progress = nullptr;
 
@@ -36,17 +34,18 @@ void test_move_append()
 
 void test_string_merge()
 {
-	buffer::block_buffer buff;
+	buffer::block_buffer buff(512, 3);
+    buff.debug();
 
-	buffer::block* _block = buff.allocate(100);
+	buffer::block_ptr _block = buff.pop_free(100);
 	char a[] = "1234";
 	_block->write(a, sizeof(a)-1);
-	buff.push(_block);
+    buff.push(_block);
 
-	buffer::block* _block2 = buff.allocate(100);
+	buffer::block_ptr _block2 = buff.pop_free(100);
 	char aa[] = "56789";
 	_block2->write(aa, sizeof(aa)-1);
-	buff.push(_block2);
+    buff.push(_block2);
 
 	buff.debug();
 	buff.merge();
@@ -64,13 +63,14 @@ void test_file()
 	}
 
 	while (!std::feof(file)) {
-		buffer::block* _block = buff.allocate();
+		buffer::block_ptr _block = buff.allocate(20*1024);
 		size_t ret = std::fread(_block->malloc(), sizeof(char), _block->free(), file);
 		_block->skip(buffer::skip_type::write, ret);
-		buff.push(_block);
 	}
 
 	buff.debug();
+    buff.merge();
+    buff.debug();
 
 	std::fclose(file);
 
@@ -81,10 +81,11 @@ void test_file()
 	size_t length = buff.size();
 	std::cout << "total read size:" << length << std::endl;
 
-	buffer::block* _block = nullptr;
-	while ((_block = buff.pop()) != nullptr) {
+	buffer::block_ptr _block;
+	while (!buff.empty()) {
+        auto _block = buff.pop();
 		std::fwrite(_block->data(), 1, _block->size(), wfile);
-		buff.free(_block);
+        buff.recover(_block);
 	}
 
 	buff.debug();
@@ -103,10 +104,9 @@ void test_merge_file()
 	}
 
 	while (!std::feof(file)) {
-		buffer::block* _block = buff.allocate();
+		buffer::block_ptr _block = buff.allocate();
 		size_t ret = std::fread(_block->malloc(), sizeof(char), _block->free(), file);
 		_block->skip(buffer::skip_type::write, ret);
-		buff.push(_block);
 	}
 
 	std::fclose(file);
@@ -115,7 +115,6 @@ void test_merge_file()
 	path += "_test_merge_file";
 	std::FILE* wfile = std::fopen(path.c_str(), "wb");
 
-	size_t length = buff.size();
 	auto _block = buff.merge();
 	std::cout << "total read size:" << buff.size() << std::endl;
 	std::fwrite(_block->data(), 1, _block->size(), wfile);
@@ -130,8 +129,7 @@ void test_merge_file()
 void test_malloc()
 {
 	buffer::block_buffer buff;
-	buff.debug();
-	void* b;
+	void* b = nullptr;
 	size_t len;
 	std::tie(b, len) = buff.malloc();
 	buff.debug();
@@ -141,49 +139,20 @@ void test_malloc()
 	std::cout << "malloc len:" << len << std::endl;
 }
 
-void test_crc32()
-{
-	char _1[] = "this is buff 1, it used to test crc32";
-
-	buffer::block_buffer buff_1;
-	buffer::block_buffer buff_2(2);
-	buff_1.write(_1, sizeof(_1)-1);
-	buff_1.write(_1, sizeof(_1)-1);
-	buff_1.debug();
-	buff_2.write(_1, sizeof(_1)-1);
-	buff_2.write(_1, sizeof(_1)-1);
-	buff_2.debug();
-
-	std::cout << "buff 1 crc32 :" << buffer::util::crc32(0, buff_1) << std::endl;
-	std::cout << "buff 1 adler32:" << buffer::util::adler32(0, buff_1) << std::endl;
-	std::cout << "buff 2 crc32 :" << buffer::util::crc32(0, buff_1) << std::endl;
-	std::cout << "buff 2 adler32:" << buffer::util::adler32(0, buff_1) << std::endl;
-
-	ulong crc = crc32(0, (const Bytef*)_1, (sizeof(_1)-1));
-	crc = crc32(crc, (const Bytef*)_1, (sizeof(_1)-1));
-
-	ulong adler = adler32(0, (const Bytef*)_1, (sizeof(_1)-1));
-	adler = adler32(adler, (const Bytef*)_1, (sizeof(_1)-1));
-	std::cout << "zlib crc32 :" << crc << std::endl;
-	std::cout << "zlib adler32:" << adler << std::endl;
-}
-
 int main(int argc, char* argv[])
 {
 	progress = argv[0];
 	std::cout << " ------------- test for buff -------------" << std::endl;
-	std::cout << " * test merge" << std::endl;
+	std::cout << " 1 test merge" << std::endl;
 	test_string_merge();
-	std::cout << " * test file" << std::endl;
+	std::cout << " 2 test file" << std::endl;
 	test_file();
-	std::cout << " * test merge to file" << std::endl;
+	std::cout << " 3 test merge to file" << std::endl;
 	test_merge_file();
-	std::cout << " * test block merge/append" << std::endl;
+	std::cout << " 4 test block merge/append" << std::endl;
 	test_move_append();
-	std::cout << " * test malloc" << std::endl;
+	std::cout << " 5 test malloc" << std::endl;
 	test_malloc();
-	std::cout << " * test crc32" << std::endl;
-	test_crc32();
 
 	return 0;
 }

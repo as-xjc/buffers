@@ -26,16 +26,21 @@
 #include <cstdint>
 #include <list>
 #include <tuple>
+#include <memory>
 
 namespace buffer {
 
 enum class skip_type {write, read};
 enum class debug_type {hex, chars};
 
+class block;
+typedef std::shared_ptr<block> block_ptr;
+class block_buffer;
+
 class block {
 public:
-	block(size_t capacity);
 	~block();
+    static block_ptr allocate(size_t);
 
 	size_t capacity() const;
 	size_t free() const;
@@ -44,7 +49,7 @@ public:
 	void* data() const;
 	void reset();
 	size_t skip(skip_type type, size_t length);
-	size_t append(const block& other);
+	size_t append(const block_ptr& other);
 
 	size_t write(void* src, size_t length, bool skip = true);
 	size_t read(void* des, size_t length, bool skip = true);
@@ -52,24 +57,34 @@ public:
 	void debug(debug_type type = debug_type::hex);
 
 private:
-	uint8_t* _data = nullptr;
-	size_t _pos = 0;
-	size_t _capacity = 0;
-	size_t _head = 0;
+    block() = delete;
+    block(size_t capacity);
+
+	uint8_t* data_ = nullptr;
+	size_t pos_ = 0;
+	size_t capacity_ = 0;
+	size_t head_ = 0;
 
 };
 
 class block_buffer {
 public:
-	block_buffer(size_t min_block_size = 1024);
+	block_buffer(size_t min_block_size = 1024, size_t block_size = 0);
 	~block_buffer();
 
-	block* pop();
+    block_ptr pop();
+    block_ptr pop_free(size_t capacity);
+    void push(block_ptr _block);
+    void recover(block_ptr block);
 	void clear();
+    bool empty();
 	size_t size();
-	block* merge();
+    block_ptr allocate(size_t capacity = 1);
+    void set_max_block_size(size_t size);
+
 	void* malloc(size_t size);
 	std::tuple<void*, size_t> malloc();
+    block_ptr merge();
 	size_t merge(block_buffer& buffer);
 	size_t append(block_buffer& buffer);
 	size_t skip(skip_type type, size_t length);
@@ -77,24 +92,17 @@ public:
 	size_t write(block_buffer& buffer);
 	size_t read(void* des, size_t length, bool skip = true);
 
-	block* allocate(size_t capacity = 1);
-	void free(block* _block);
-	void push(block* _block);
-
-	std::list<block*>& blocks();
-
 	void debug(debug_type type = debug_type::hex);
 
 private:
-	block* get_block(size_t size);
-	block* new_push_block(size_t size);
-
 	size_t calc_block_size(size_t size);
 
-	std::list<block*> _blocks;
-	std::list<block*> _free_blocks;
+	std::list<block_ptr> blocks_;
+	std::list<block_ptr> free_blocks_;
 
-	const size_t _min_block_size;
+	const size_t min_block_size_;
+
+    size_t max_block_size_ = 10;
 };
 
 }
