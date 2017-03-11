@@ -30,79 +30,112 @@
 
 namespace buffer {
 
-enum class skip_type {write, read};
-enum class debug_type {hex, chars};
+    enum class skip_type {
+        write, read
+    };
+    enum class debug_type {
+        hex, chars
+    };
 
-class block;
-typedef std::shared_ptr<block> block_ptr;
-class block_buffer;
+    class block;
 
-class block {
-public:
-	~block();
-    static block_ptr allocate(size_t);
+    typedef std::shared_ptr<block> block_ptr;
 
-	size_t capacity() const;
-	size_t free() const;
-	size_t size() const;
-	void* malloc();
-	void* data() const;
-	void reset();
-	size_t skip(skip_type type, size_t length);
-	size_t append(const block_ptr& other);
+    class block_buffer;
 
-	size_t write(void* src, size_t length, bool skip = true);
-	size_t read(void* des, size_t length, bool skip = true);
+    class block {
+    public:
+        ~block();
 
-	void debug(debug_type type = debug_type::hex);
+        static block_ptr allocate(size_t);
 
-private:
-    block() = delete;
-    block(size_t capacity);
+        size_t capacity() const;
 
-	uint8_t* data_ = nullptr;
-	size_t pos_ = 0;
-	size_t capacity_ = 0;
-	size_t head_ = 0;
+        size_t free() const;
 
-};
+        size_t size() const;
 
-class block_buffer {
-public:
-	block_buffer(size_t min_block_size = 1024, size_t block_size = 0);
-	~block_buffer();
+        void *malloc();
 
-    block_ptr pop();
-    block_ptr pop_free(size_t capacity);
-    void push(block_ptr _block);
-    void recover(block_ptr block);
-	void clear();
-    bool empty();
-	size_t size();
-    block_ptr allocate(size_t capacity = 1);
-    void set_max_block_size(size_t size);
+        void *data() const;
 
-	void* malloc(size_t size);
-	std::tuple<void*, size_t> malloc();
-    block_ptr merge();
-	size_t merge(block_buffer& buffer);
-	size_t append(block_buffer& buffer);
-	size_t skip(skip_type type, size_t length);
-	size_t write(void* src, size_t length, bool skip = true);
-	size_t write(block_buffer& buffer);
-	size_t read(void* des, size_t length, bool skip = true);
+        void reset();
 
-	void debug(debug_type type = debug_type::hex);
+        size_t skip(skip_type type, size_t length);
 
-private:
-	size_t calc_block_size(size_t size);
+        size_t append(const block_ptr &other);
 
-	std::list<block_ptr> blocks_;
-	std::list<block_ptr> free_blocks_;
+        size_t write(void *src, size_t length, bool skip = true);
 
-	const size_t min_block_size_;
+        size_t read(void *des, size_t length, bool skip = true);
 
-    size_t max_block_size_ = 10;
-};
+        void debug(debug_type type = debug_type::hex);
+
+    private:
+        block() = delete;
+
+        block(size_t capacity);
+
+        uint8_t *data_ = nullptr;
+        size_t pos_ = 0;
+        size_t capacity_ = 0;
+        size_t head_ = 0;
+
+    };
+
+    class block_buffer {
+    public:
+        block_buffer(size_t min_block_size = 1024, size_t block_size = 0);
+
+        ~block_buffer();
+
+        block_ptr pop();
+
+        block_ptr pop_free(size_t capacity);
+
+        void push(block_ptr _block);
+
+        void recover(block_ptr block);
+
+        void clear();
+
+        bool empty();
+
+        size_t size();
+
+        block_ptr allocate(size_t capacity = 1);
+
+        void set_max_block_size(size_t size);
+
+        void *malloc(size_t size);
+
+        std::tuple<void *, size_t> malloc();
+
+        block_ptr merge();
+
+        size_t merge(block_buffer &buffer);
+
+        size_t append(block_buffer &buffer);
+
+        size_t skip(skip_type type, size_t length);
+
+        size_t write(void *src, size_t length, bool skip = true);
+
+        size_t write(block_buffer &buffer);
+
+        size_t read(void *des, size_t length, bool skip = true);
+
+        void debug(debug_type type = debug_type::hex);
+
+    private:
+        size_t calc_block_size(size_t size);
+
+        std::list<block_ptr> blocks_;
+        std::list<block_ptr> free_blocks_;
+
+        const size_t min_block_size_;
+
+        size_t max_block_size_ = 10;
+    };
 
 }
