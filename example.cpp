@@ -3,7 +3,7 @@
 #include <iostream>
 #include <string>
 
-#include "../block_buffer.hpp"
+#include "buffer.hpp"
 
 static char *progress = nullptr;
 
