@@ -103,16 +103,18 @@ class ByteBuffer : public BaseBuffer {
     std::memcpy(des, reinterpret_cast<void*>(data()), rlen);
 
     if (skip) this->skip(skip_type::read, rlen);
-    if (head_ == tail_) {
-      head_ = 0;
-      tail_ = 0;
-    }
+
     return rlen;
   }
 
   size_t skip(skip_type type, size_t length) {
     if (type == skip_type::read) {
       head_ += length;
+
+      if (head_ == tail_) {
+        head_ = 0;
+        tail_ = 0;
+      }
     } else {
       tail_ += length;
     }
