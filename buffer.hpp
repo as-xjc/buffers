@@ -36,6 +36,7 @@ enum class skip_type { write, read };
 enum class debug_type { hex, chars };
 
 const static size_t MIN_BUFFER_CAPACITY = 8;
+const static size_t DEBUG_FORMAT_OFFSET = 16;
 
 class BaseBuffer {
  public:
@@ -44,6 +45,7 @@ class BaseBuffer {
   virtual size_t write(void* src, size_t len, bool skip = true) = 0;
   virtual size_t read(void* des, size_t len, bool skip = true) = 0;
   virtual size_t skip(skip_type type, size_t length) = 0;
+  virtual void debug(debug_type type = debug_type::hex) = 0;
   virtual size_t capacity() = 0;
   virtual size_t size() = 0;
   virtual size_t free() = 0;
@@ -65,30 +67,114 @@ class BaseBuffer {
 
 class ByteBuffer : public BaseBuffer {
  public:
-  ByteBuffer(size_t capacity) : capacity_(
+  ByteBuffer(size_t capacity = MIN_BUFFER_CAPACITY) : capacity_(
       capacity < MIN_BUFFER_CAPACITY ? MIN_BUFFER_CAPACITY : capacity) {
     data_ = new byte[capacity_];
   }
 
   virtual ~ByteBuffer() { delete[] data_; }
 
+  void zero() {
+    std::memset(reinterpret_cast<void*>(data_), 0, capacity_);
+    head_ = 0;
+    tail_ = 0;
+  }
+
   size_t capacity() { return capacity_; }
   size_t size() { return tail_ - head_; }
   size_t free() { return capacity_ - tail_; }
-  byte* data() { return &(data_[head_]); }
+  byte* data() { return &data_[head_]; }
+  byte* tail() { return &data_[tail_]; }
+
+  size_t write(void* src, size_t len, bool skip = true) {
+    if (free() < len) grow(size() + len);
+
+    std::memcpy(reinterpret_cast<void*>(tail()), src, len);
+
+    if (skip) this->skip(skip_type::write, len);
+
+    return len;
+  }
+
+  size_t read(void* des, size_t len, bool skip = true) {
+    if (size() < 1) return 0;
+
+    size_t rlen = size() < len ? size() : len;
+    std::memcpy(des, reinterpret_cast<void*>(data()), rlen);
+
+    if (skip) this->skip(skip_type::read, rlen);
+    if (head_ == tail_) {
+      head_ = 0;
+      tail_ = 0;
+    }
+    return rlen;
+  }
+
+  size_t skip(skip_type type, size_t length) {
+    if (type == skip_type::read) {
+      head_ += length;
+    } else {
+      tail_ += length;
+    }
+
+    return length;
+  }
+
+  void debug(debug_type type = debug_type::hex) {
+    std::printf("%p capacity:%zu, used:%zu, free:%zu, head:%zu, tail:%zu\n", data_, capacity(), size(), free(), head_, tail_);
+    if (size() < 1) {
+      std::printf("    <none>\n");
+      return;
+    }
+
+    std::printf("    ");
+    int index = 0;
+    for (size_t i = 0; i < capacity_; ++i) {
+      switch (type) {
+        case debug_type::hex :std::printf("%3x", data_[i]);
+          break;
+        case debug_type::chars :std::printf("%c", data_[i]);
+          break;
+      }
+
+      ++index;
+      if (index % DEBUG_FORMAT_OFFSET == 0 && i != (capacity_ - 1)) std::printf("\n    ");
+    }
+    std::printf("\n");
+  }
 
  protected:
   size_t continuous() { return size(); }
+  void grow (size_t capacity) {
+    size_t newcapacity = capacity_;
+    while (newcapacity < capacity) {
+      newcapacity *= 2;
+    }
+    byte* newdata = new byte[newcapacity];
+
+    if (size() > 0) {
+      std::memcpy(reinterpret_cast<void*>(newdata), reinterpret_cast<void*>(data()), size());
+      tail_ = size();
+    } else {
+      tail_ = 0;
+    }
+
+    head_ = 0;
+    capacity_ = newcapacity;
+
+    delete[] data_;
+    data_ = newdata;
+  }
 
  private:
-  size_t capacity_ = 0;
-  size_t head_ = 0;
-  size_t tail_ = 0;
+  size_t capacity_{0};
+  size_t head_{0};
+  size_t tail_{0};
 };
 
 class block;
 
-typedef std::shared_ptr <block> block_ptr;
+typedef std::shared_ptr<block> block_ptr;
 
 class block_buffer;
 
@@ -199,10 +285,10 @@ class block {
     capacity_ = capacity;
   }
 
-  uint8_t* data_ = nullptr;
-  size_t pos_ = 0;
-  size_t capacity_ = 0;
-  size_t head_ = 0;
+  uint8_t* data_{nullptr};
+  size_t pos_{0};
+  size_t capacity_{0};
+  size_t head_{0};
 
 };
 
@@ -518,12 +604,12 @@ class block_buffer {
     return allocate_size;
   }
 
-  std::list <block_ptr> blocks_;
-  std::list <block_ptr> free_blocks_;
+  std::list<block_ptr> blocks_;
+  std::list<block_ptr> free_blocks_;
 
-  const size_t min_block_size_;
+  const size_t min_block_size_{0};
 
-  size_t max_block_size_ = 10;
+  size_t max_block_size_{10};
 };
 
 }

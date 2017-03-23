@@ -1,7 +1,5 @@
 #include <iostream>
-#include <cstring>
-#include <iostream>
-#include <string>
+#include <cstdio>
 
 #include "buffer.hpp"
 
@@ -134,6 +132,27 @@ void test_malloc() {
   std::cout << "malloc len:" << len << std::endl;
 }
 
+void test_bytebuffer()
+{
+  buffer::ByteBuffer buff;
+  buff.debug();
+  char* short_ = "1234";
+  buff.write(short_, std::strlen(short_));
+  buff.debug();
+  char* test = "1234567890";
+  buff.write(test, std::strlen(test));
+  buff.debug();
+  buff.zero();
+  buff.write(test, std::strlen(test));
+  buff.debug();
+
+  char a[2];
+  buff.read(a, 2);
+  buff.debug();
+  buff.write(a, 2);
+  buff.debug();
+}
+
 int main(int argc, char *argv[]) {
   progress = argv[0];
   std::cout << " ------------- test for buff -------------" << std::endl;
@@ -147,6 +166,8 @@ int main(int argc, char *argv[]) {
   test_move_append();
   std::cout << " 5 test malloc" << std::endl;
   test_malloc();
+  std::cout << " 6 test byte buffer" << std::endl;
+  test_bytebuffer();
 
   return 0;
 }
