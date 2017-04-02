@@ -1,5 +1,4 @@
 #include <iostream>
-#include <cstdio>
 
 #include "buffer.hpp"
 
@@ -76,7 +75,6 @@ void test_file() {
   size_t length = buff.size();
   std::cout << "total read size:" << length << std::endl;
 
-  buffer::block_ptr _block;
   while (!buff.empty()) {
     auto _block = buff.pop();
     std::fwrite(_block->data(), 1, _block->size(), wfile);
@@ -136,14 +134,14 @@ void test_bytebuffer()
 {
   buffer::ByteBuffer buff;
   buff.debug();
-  char* short_ = "1234";
-  buff.write(short_, std::strlen(short_));
+  std::string short_{"1234"};
+  buff.write((void*)short_.c_str(), short_.size());
   buff.debug();
-  char* test = "1234567890";
-  buff.write(test, std::strlen(test));
+  std::string test{"1234567890"};
+  buff.write((void*)test.c_str(), test.size());
   buff.debug();
   buff.zero();
-  buff.write(test, std::strlen(test));
+  buff.write((void*)test.c_str(), test.size());
   buff.debug();
 
   char a[2];

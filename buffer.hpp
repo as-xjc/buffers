@@ -62,7 +62,7 @@ class BaseBuffer {
   BaseBuffer() {};
   virtual size_t continuous() = 0;
 
-  byte* data_ = nullptr;
+  byte* data_{nullptr};
 };
 
 class ByteBuffer : public BaseBuffer {
@@ -87,7 +87,7 @@ class ByteBuffer : public BaseBuffer {
   byte* tail() { return &data_[tail_]; }
 
   size_t write(void* src, size_t len, bool skip = true) {
-    if (free() < len) grow(size() + len);
+    if (free() < len) grow(capacity() + len);
 
     std::memcpy(reinterpret_cast<void*>(tail()), src, len);
 
@@ -123,7 +123,8 @@ class ByteBuffer : public BaseBuffer {
   }
 
   void debug(debug_type type = debug_type::hex) {
-    std::printf("%p capacity:%zu, used:%zu, free:%zu, head:%zu, tail:%zu\n", data_, capacity(), size(), free(), head_, tail_);
+    std::printf("%p capacity:%zu, used:%zu, free:%zu, head:%zu, tail:%zu\n",
+                data_, capacity(), size(), free(), head_, tail_);
     if (size() < 1) {
       std::printf("    <none>\n");
       return;
@@ -133,9 +134,11 @@ class ByteBuffer : public BaseBuffer {
     int index = 0;
     for (size_t i = 0; i < capacity_; ++i) {
       switch (type) {
-        case debug_type::hex :std::printf("%3x", data_[i]);
+        case debug_type::hex :
+          std::printf("%3x", data_[i]);
           break;
-        case debug_type::chars :std::printf("%c", data_[i]);
+        case debug_type::chars :
+          std::printf("%c", data_[i]);
           break;
       }
 
@@ -154,13 +157,12 @@ class ByteBuffer : public BaseBuffer {
     }
     byte* newdata = new byte[newcapacity];
 
-    if (size() > 0) {
-      std::memcpy(reinterpret_cast<void*>(newdata), reinterpret_cast<void*>(data()), size());
-      tail_ = size();
-    } else {
-      tail_ = 0;
+    size_t used = size();
+    if (used > 0) {
+      std::memcpy(reinterpret_cast<void*>(newdata), reinterpret_cast<void*>(data()), used);
     }
 
+    tail_ = used;
     head_ = 0;
     capacity_ = newcapacity;
 
@@ -186,15 +188,15 @@ class block {
 
   static block_ptr allocate(size_t size) { return block_ptr(new block(size)); }
 
-  size_t capacity() const { return capacity_; }
+  size_t capacity() { return capacity_; }
 
-  size_t free() const { return capacity_ - pos_; }
+  size_t free() { return capacity_ - pos_; }
 
-  size_t size() const { return pos_ - head_; }
+  size_t size() { return pos_ - head_; }
 
   void* malloc() { return &data_[pos_]; }
 
-  void* data() const { return &data_[head_]; }
+  void* data() { return &data_[head_]; }
 
   void reset() {
     pos_ = 0;
@@ -257,7 +259,6 @@ class block {
   }
 
   void debug(debug_type type = debug_type::hex) {
-    int format_offset = 16;
     std::printf("capacity:%zu, used:%zu, free:%zu\n", capacity(), size(), free());
     if (size() < 1) {
       std::printf("    <none>");
@@ -268,14 +269,16 @@ class block {
     int index = 0;
     for (size_t i = head_; i < pos_; ++i) {
       switch (type) {
-        case debug_type::hex :std::printf("%3x", data_[i]);
+        case debug_type::hex :
+          std::printf("%3x", data_[i]);
           break;
-        case debug_type::chars :std::printf("%c", data_[i]);
+        case debug_type::chars :
+          std::printf("%c", data_[i]);
           break;
       }
 
       ++index;
-      if (index % format_offset == 0 && i != (pos_ - 1)) std::printf("\n    ");
+      if (index % DEBUG_FORMAT_OFFSET == 0 && i != (pos_ - 1)) std::printf("\n    ");
     }
   }
 
